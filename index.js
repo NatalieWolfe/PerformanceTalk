@@ -9,7 +9,7 @@ const benchmark = require('./lib/benchmark')
 
 
 const groups = [
-  'function-wrapping'
+  'wrapping'
 ]
 
 a.series([
@@ -25,11 +25,7 @@ function loadAllGroups(cb) {
   process.stdout.write('Loading')
   a.each(groups, (group, cb) => {
     const dir = path.resolve(group)
-    const cleanGroup = group.replace(
-      /\b([^\w]*\w)/g,
-      (m) => ((m.length > 1 ? ' ' : '') + m[m.length - 1].toUpperCase())
-    )
-    benchmark.startGroup(cleanGroup)
+    benchmark.startGroup(group)
 
     a.waterfall([
       a.apply(fs.readdir, dir),
@@ -46,33 +42,88 @@ function loadAllGroups(cb) {
 
 function runAllGroups(cb) {
   const screen = blessed.screen({smartCSR: true})
-  const resultsBox = blessed.box({
-    top: 5,
+  const root = blessed.element({
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%'
+  })
+  screen.append(root)
+
+  const groupTitle = blessed.bigtext({
+    top: 0,
+    left: 'center',
+    fch: '#'
+  })
+  const testTitle = blessed.box({
+    top: 15,
     left: 'center',
     width: 90,
-    height: 1
+    height: 1,
+    style: {fg: 'bright-blue', bold: true}
+  })
+  const resultsBox = blessed.box({
+    top: 16,
+    left: 'center',
+    width: 90,
+    height: 1,
+    tags: true
   })
   const codeBox = blessed.box({
-    top: 10,
+    top: 18,
     left: 'center',
     width: 90,
     height: '60%',
     border: {type: 'line'}
   })
-  screen.append(resultsBox)
-  screen.append(codeBox)
+
+  root.append(groupTitle)
+  root.append(testTitle)
+  root.append(codeBox)
+  root.append(resultsBox)
 
   a.eachSeries(benchmark.groups, (group, cb) => {
+    groupTitle.setText(group.name)
+    let previousHz = 0
+    let firstHz = 0
+
     a.eachSeries(group.tests, (test, cb) => {
+      testTitle.setContent(test.name)
       resultsBox.setContent('')
+
+      codeBox.height = test.code.split('\n').length + 2
+
       codeBox.setContent(cardinal.highlight(test.code, {linenos: true}))
-      codeBox.once('click', () => cb())
+      root.once('click', () => cb())
       screen.render()
 
       setImmediate(() => {
+        // resultsBox.setContent('done')
         test.run()
-        resultsBox.setContent(test.results.toString())
+
+        // Format these results
+        const hz = Math.round(test.results.hz)
+        const confidence = test.results.stats.rme.toFixed(2)
+        let results = `{bold}${hz.toLocaleString()}{/bold} hz ±${confidence}%`
+
+        if (previousHz) {
+          const diff = hz / previousHz * 100
+          const diffColor = diff < 100 ? 'red' : 'green'
+          results += ` -> {${diffColor}-bg}${diff.toFixed(2)}%{/${diffColor}-bg}`
+        }
+
+        if (firstHz !== previousHz) {
+          const diff = hz / firstHz * 100
+          const diffColor = diff < 100 ? 'red' : 'green'
+          results += ` -> {${diffColor}-bg}${diff.toFixed(2)}%{/${diffColor}-bg}`
+        } else if (firstHz === 0) {
+          firstHz = hz
+        }
+
+        resultsBox.setContent(`{center}${results}{/center}`)
         screen.render()
+
+        previousHz = hz
       })
     }, cb)
   }, (err) => {
