@@ -9,8 +9,8 @@ benchmark('change order', () => {
     Object.defineProperty(wrapper, '__original', {value: fn, enumerable: false})
 
     // No real reason to re-order, I'm sure this wont affect anything.
-    Object.defineProperty(wrapper, 'length', {value: fn.length})
     wrapper.prototype = fn.prototype
+    Object.defineProperty(wrapper, 'length', {value: fn.length})
 
     return wrapper
   }(test.func))
