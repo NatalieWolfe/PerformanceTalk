@@ -108,14 +108,14 @@ function runAllGroups(cb) {
 
         if (previousHz) {
           const diff = hz / previousHz * 100
-          const diffColor = diff < 100 ? 'red' : 'green'
-          results += ` -> {${diffColor}-bg}${diff.toFixed(2)}%{/${diffColor}-bg}`
+          const diffColor = diff < 100 ? 'red-bg' : 'green-bg'
+          results += ` -> {${diffColor}}{black-fg}${diff.toFixed(2)}%{/black-fg}{/${diffColor}}`
         }
 
         if (firstHz !== previousHz) {
           const diff = hz / firstHz * 100
-          const diffColor = diff < 100 ? 'red' : 'green'
-          results += ` -> {${diffColor}-bg}${diff.toFixed(2)}%{/${diffColor}-bg}`
+          const diffColor = diff < 100 ? 'red-bg' : 'green-bg'
+          results += ` -> {${diffColor}}{black-fg}${diff.toFixed(2)}%{/black-fg}{/${diffColor}}`
         } else if (firstHz === 0) {
           firstHz = hz
         }
