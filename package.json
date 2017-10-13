@@ -19,6 +19,7 @@
   "dependencies": {
     "async": "^2.5.0",
     "benchmark": "^2.1.4",
-    "blessed": "^0.1.81"
+    "blessed": "^0.1.81",
+    "cardinal": "^1.0.0"
   }
 }

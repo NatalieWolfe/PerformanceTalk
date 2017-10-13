@@ -1,10 +1,12 @@
 
 const a = require('async')
 const blessed = require('blessed')
+const cardinal = require('cardinal')
 const fs = require('fs')
 const path = require('path')
 
 const benchmark = require('./lib/benchmark')
+
 
 const groups = [
   'function-wrapping'
@@ -63,7 +65,7 @@ function runAllGroups(cb) {
   a.eachSeries(benchmark.groups, (group, cb) => {
     a.eachSeries(group.tests, (test, cb) => {
       resultsBox.setContent('')
-      codeBox.setContent(test.code)
+      codeBox.setContent(cardinal.highlight(test.code, {linenos: true}))
       codeBox.once('click', () => cb())
       screen.render()
 
