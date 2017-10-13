@@ -1,5 +1,6 @@
 
 const a = require('async')
+const blessed = require('blessed')
 const fs = require('fs')
 const path = require('path')
 
@@ -9,40 +10,71 @@ const groups = [
   'function-wrapping'
 ]
 
-a.eachSeries(groups, (group, cb) => {
-  const dir = path.resolve(group)
-  const cleanGroup = group.replace(
-    /\b([^\w]*\w)/g,
-    (m) => ((m.length > 1 ? ' ' : '') + m[m.length - 1].toUpperCase())
-  )
-
-  a.waterfall([
-    a.apply(fs.readdir, dir),
-    (files, cb) => {
-      console.log(cleanGroup)
-      a.mapSeries(files, a.apply(runBench, dir), (err, results) => {
-        console.log('\033c')
-        results.unshift(cleanGroup)
-        console.log(results.join('\n    '))
-      })
-    }
-  ], cb)
-}, (err) => {
+a.series([
+  loadAllGroups,
+  runAllGroups
+], (err) => {
   if (err) {
     console.error('Oooops!', err)
   }
 })
 
-function runBench(dir, file, cb) {
-  benchmark.onTest((test) => {
-    let out = null
+function loadAllGroups(cb) {
+  process.stdout.write('Loading')
+  a.each(groups, (group, cb) => {
+    const dir = path.resolve(group)
+    const cleanGroup = group.replace(
+      /\b([^\w]*\w)/g,
+      (m) => ((m.length > 1 ? ' ' : '') + m[m.length - 1].toUpperCase())
+    )
+    benchmark.startGroup(cleanGroup)
 
-    console.log('\033c')
-    console.log(test.code)
-    test.on('cycle', (event) => console.log(out = event.target.toString()))
-    test.run()
-    console.log('')
-    setTimeout(cb, 5000, null, out)
+    a.waterfall([
+      a.apply(fs.readdir, dir),
+      (files, cb) => {
+        files.forEach((file) => {
+          process.stdout.write('.')
+          require(path.join(dir, file))
+        })
+        setImmediate(cb)
+      }
+    ], cb)
+  }, cb)
+}
+
+function runAllGroups(cb) {
+  const screen = blessed.screen({smartCSR: true})
+  const resultsBox = blessed.box({
+    top: 5,
+    left: 'center',
+    width: 90,
+    height: 1
   })
-  require(path.join(dir, file))
+  const codeBox = blessed.box({
+    top: 10,
+    left: 'center',
+    width: 90,
+    height: '60%',
+    border: {type: 'line'}
+  })
+  screen.append(resultsBox)
+  screen.append(codeBox)
+
+  a.eachSeries(benchmark.groups, (group, cb) => {
+    a.eachSeries(group.tests, (test, cb) => {
+      resultsBox.setContent('')
+      codeBox.setContent(test.code)
+      codeBox.once('click', () => cb())
+      screen.render()
+
+      setImmediate(() => {
+        test.run()
+        resultsBox.setContent(test.results.toString())
+        screen.render()
+      })
+    }, cb)
+  }, (err) => {
+    screen.destroy()
+    cb(err)
+  })
 }

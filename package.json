@@ -18,6 +18,7 @@
   "homepage": "https://github.com/NatalieWolfe/PerformanceTalk#readme",
   "dependencies": {
     "async": "^2.5.0",
-    "benchmark": "^2.1.4"
+    "benchmark": "^2.1.4",
+    "blessed": "^0.1.81"
   }
 }
