@@ -9,6 +9,8 @@ const benchmark = require('./lib/benchmark')
 
 
 const groups = [
+  'scoping',
+  'properties',
   'wrapping'
 ]
 
@@ -23,7 +25,7 @@ a.series([
 
 function loadAllGroups(cb) {
   process.stdout.write('Loading')
-  a.each(groups, (group, cb) => {
+  a.eachSeries(groups, (group, cb) => {
     const dir = path.resolve(group)
     benchmark.startGroup(group)
 
