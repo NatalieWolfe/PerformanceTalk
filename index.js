@@ -11,6 +11,7 @@ const benchmark = require('./lib/benchmark')
 const groups = [
   'scoping',
   'properties',
+  'property-check',
   'wrapping'
 ]
 
