@@ -4,7 +4,7 @@ const benchmark = require('../lib/benchmark')
 class MyObject {
 }
 
-benchmark('assignment', () => {
+benchmark('non-enumerable', () => {
   // class MyObject {
   // }
 
